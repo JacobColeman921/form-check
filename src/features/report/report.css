@@ -1,34 +1,38 @@
-.report { margin-top: 26px; }
-.report h2 { font-size: 18px; margin: 0 0 14px; }
+.report { margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--edge-soft); }
+.report h2 { font-size: 19px; margin: 0 0 16px; letter-spacing: -.012em; }
 
 .verdict {
-  display: flex; gap: 18px; align-items: center;
+  display: flex; gap: 20px; align-items: center;
   background: var(--deep); border: 1px solid var(--edge-soft);
-  border-radius: var(--r); padding: 18px 20px;
+  border-radius: var(--r-lg); padding: 20px 22px;
+  box-shadow: var(--lift);
 }
 .letter {
-  font-family: var(--mono); font-size: 46px; font-weight: 700;
+  font-family: var(--mono); font-size: 44px; font-weight: 600; letter-spacing: -.04em;
   line-height: 1; color: var(--ok); min-width: 62px; text-align: center;
 }
 .letter.ng { font-size: 17px; color: var(--warn); min-width: 96px; line-height: 1.3; }
 .headline { margin: 0; color: var(--text-mid); font-size: 14.5px; }
 
+/* Four figures separated by rules and space, not boxed into four cards. */
 .tally {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 14px; margin: 16px 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 0; margin: 20px 0 0; padding: 0;
+  border-top: 1px solid var(--edge-soft);
 }
-.tally div { background: var(--deep); border: 1px solid var(--edge-soft); border-radius: var(--r); padding: 12px 14px; }
-.tally dt { font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--text-dim); }
-.tally dd { margin: 4px 0 0; font-size: 22px; font-weight: 600; }
+.tally div { padding: 14px 18px 14px 0; border-right: 1px solid var(--edge-soft); }
+.tally div:last-child { border-right: 0; }
+.tally dt { font-size: 12.5px; color: var(--text-dim); }
+.tally dd { margin: 5px 0 0; font-size: 25px; font-weight: 600; letter-spacing: -.03em; }
 
-.rep { margin-top: 10px; background: var(--deep); border: 1px solid var(--edge-soft); border-radius: var(--r); }
+.rep { margin-top: 10px; background: var(--deep); border: 1px solid var(--edge-soft); border-radius: var(--r-md); }
 .rep summary { cursor: pointer; padding: 12px 16px; display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
 .rep summary:focus-visible { outline: 2px solid var(--ok); outline-offset: -2px; }
 .rep-n { font-weight: 600; }
 .rep-sum { color: var(--text-dim); font-size: 13px; }
 
 .criteria { list-style: none; margin: 0; padding: 0 16px 6px; display: grid; gap: 8px; }
-.crit { display: grid; grid-template-columns: 26px 1fr; gap: 11px; padding: 11px 12px; border-radius: var(--r); border: 1px solid var(--edge-soft); }
+.crit { display: grid; grid-template-columns: 26px 1fr; gap: 11px; padding: 11px 12px; border-radius: var(--r-md); border: 1px solid var(--edge-soft); }
 .crit.met { background: var(--ok-dim); border-color: rgba(63,214,180,.35); }
 .crit.not_met { background: var(--bad-dim); border-color: rgba(255,110,88,.35); }
 .crit.uncallable { background: var(--warn-dim); border-color: rgba(245,162,59,.32); }
@@ -38,7 +42,7 @@
 .crit.uncallable .glyph { color: var(--warn); }
 .body { display: grid; gap: 2px; }
 .label { font-weight: 600; font-size: 14px; }
-.state { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); }
+.state { font-size: 12px; color: var(--text-dim); font-weight: 500; }
 .detail { font-size: 13.5px; color: var(--text-mid); }
 .numbers { font-size: 12px; color: var(--text-dim); }
 .timing { margin: 0; padding: 0 16px 14px; font-size: 12px; color: var(--text-dim); }
