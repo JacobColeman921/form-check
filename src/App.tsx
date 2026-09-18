@@ -214,6 +214,14 @@ export default function App() {
                 </p>
               )}
 
+              {pose.canFlip && (
+                <p className="field">
+                  <button onClick={pose.flip}>
+                    Flip to {pose.facing === "user" ? "rear" : "front"} camera
+                  </button>
+                </p>
+              )}
+
               {pose.zoom ? (
                 <p className="field">
                   <label htmlFor="zoom">Zoom</label>
@@ -236,9 +244,9 @@ export default function App() {
               )}
 
               <p className="hint">
-                Still too tight on a MacBook? That is Center Stage following your face. Turn it off
-                in Control Center, Video Effects, while this page has the camera. A phone on a
-                tripod further back beats the built-in camera for a full-body shot.
+                Still too tight on a MacBook? That is Center Stage following your face. Turn it
+                off in Control Center, Video Effects, while this page has the camera. On a phone,
+                use the rear camera and prop it about two metres away.
               </p>
             </div>
           )}

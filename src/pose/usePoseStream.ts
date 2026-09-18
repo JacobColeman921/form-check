@@ -22,12 +22,17 @@ export interface PoseStream {
   setZoom: (v: number) => void;
   cameras: MediaDeviceInfo[];
   deviceId: string | null;
+  /** Which way the camera points. Only meaningful on a phone. */
+  facing: "user" | "environment";
+  /** True when the device actually has a second camera to switch to. */
+  canFlip: boolean;
+  flip: () => void;
   /** Most recent frame, for drawing. */
   latest: LandmarkFrame | null;
   /** Everything captured since the last clear, for grading. */
   frames: React.RefObject<LandmarkFrame[]>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
-  start: (model?: ModelName, deviceId?: string) => Promise<void>;
+  start: (model?: ModelName, deviceId?: string, facing?: "user" | "environment") => Promise<void>;
   stop: () => void;
   clear: () => void;
 }
@@ -51,6 +56,7 @@ export function usePoseStream(): PoseStream {
   const [zoom, setZoomState] = useState<{ min: number; max: number; value: number } | null>(null);
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
   const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [facing, setFacing] = useState<"user" | "environment">("user");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
@@ -60,6 +66,8 @@ export function usePoseStream(): PoseStream {
   const recentRef = useRef<number[]>([]);
   const runningRef = useRef(false);
   const trackRef = useRef<MediaStreamTrack | null>(null);
+  const facingRef = useRef<"user" | "environment">("user");
+  const startRef = useRef<PoseStream["start"] | null>(null);
 
   const stop = useCallback(() => {
     runningRef.current = false;
@@ -91,15 +99,29 @@ export function usePoseStream(): PoseStream {
       .catch(() => undefined);
   }, []);
 
+  /**
+   * Swap between the front and rear camera. Rear is what you want on a phone
+   * propped two metres away: it is the better sensor and the wider lens.
+   * Restarting is required because facingMode cannot be changed on a live
+   * track on most devices.
+   */
+  const flip = useCallback(() => {
+    const next = facingRef.current === "user" ? "environment" : "user";
+    stop();
+    void startRef.current?.("lite", undefined, next);
+  }, [stop]);
+
   const clear = useCallback(() => {
     framesRef.current = [];
   }, []);
 
   const start = useCallback(
-    async (model: ModelName = "lite", wantedDeviceId?: string) => {
+    async (model: ModelName = "lite", wantedDeviceId?: string, wantedFacing?: "user" | "environment") => {
       setError(null);
       setStatus("starting");
       setModelStatus("loading");
+      const useFacing = wantedFacing ?? facing;
+      setFacing(useFacing);
       try {
         // Warm the model and open the camera at the same time. The model is the
         // slow half, and there is no reason for it to wait on a permission
@@ -186,7 +208,7 @@ export function usePoseStream(): PoseStream {
               width: { ideal: 1920 },
               height: { ideal: 1080 },
               resizeMode: "none",
-              ...(wantedDeviceId ? { deviceId: { exact: wantedDeviceId } } : { facingMode: "user" }),
+              ...(wantedDeviceId ? { deviceId: { exact: wantedDeviceId } } : { facingMode: useFacing }),
             },
             audio: false,
           })
@@ -322,13 +344,16 @@ export function usePoseStream(): PoseStream {
         stop();
       }
     },
-    [stop],
+    [stop, facing],
   );
 
+  useEffect(() => { facingRef.current = facing; }, [facing]);
+  useEffect(() => { startRef.current = start; }, [start]);
   useEffect(() => stop, [stop]);
 
   return {
     status, modelStatus, error, fps, inferenceMs, delegate, resolution, zoom, setZoom,
-    cameras, deviceId, latest, frames: framesRef, videoRef, start, stop, clear,
+    cameras, deviceId, facing, canFlip: cameras.length > 1, flip,
+    latest, frames: framesRef, videoRef, start, stop, clear,
   };
 }

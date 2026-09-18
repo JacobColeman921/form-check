@@ -25,8 +25,13 @@ fix the camera instead of inventing a number.
 
 ```bash
 npm install
+npm run fetch:model
 npm run dev
 ```
+
+`fetch:model` downloads the 5.5 MB pose model once. The wasm runtime is copied
+out of `node_modules` automatically before every dev start and build. Neither
+is in git: they are build inputs, not source.
 
 Then: start the camera, stand side-on about two metres back with your whole body in frame,
 calibrate for three seconds, and do a set.
@@ -43,6 +48,7 @@ angle is wrong, so the app refuses to grade rather than reporting nonsense.
 | `npm test` | Unit tests |
 | `npm run test:cov` | Coverage over `src/domain` |
 | `npm run check:copy` | Fails on em dashes, emoji and promotional copy |
+| `npm run fetch:model` | Downloads the pose model into `public/models` |
 
 ## Architecture
 

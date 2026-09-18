@@ -27,3 +27,5 @@ dist
 node_modules
 .DS_Store
 coverage
+public/mediapipe
+public/models
