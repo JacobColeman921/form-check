@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePoseStream } from "./pose/usePoseStream";
 import { drawSkeleton } from "./pose/skeleton";
 import { buildBaseline, dominantSide, isSagittal, squatFrameMetrics, squatSeries } from "./domain/squat";
+import { checkFraming } from "./domain/framing";
 import { segmentReps } from "./domain/segment";
 import { gradeSession } from "./domain/grade";
 import { GradeReport } from "./features/report/GradeReport";
@@ -26,7 +27,10 @@ export default function App() {
   const [countdown, setCountdown] = useState(0);
 
   const side = baseline?.side ?? (pose.latest ? dominantSide([pose.latest]) : "left");
-  const live = pose.latest ? squatFrameMetrics(pose.latest, side) : null;
+  const framing = checkFraming(pose.latest, side);
+  // Only report joint angles the camera can actually see. A knee angle derived
+  // from landmarks MediaPipe invented below the frame is not a measurement.
+  const live = pose.latest && framing.ok ? squatFrameMetrics(pose.latest, side) : null;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -53,11 +57,26 @@ export default function App() {
     setPhase("live");
   }, [pose]);
 
+  const stopCamera = useCallback(() => {
+    pose.stop();
+    pose.clear();
+    // A baseline belongs to one camera position. Keeping it across a restart
+    // would silently grade a new setup against an old reference.
+    setBaseline(null);
+    setLiveReps(0);
+    setSetupError(null);
+    setPhase("idle");
+  }, [pose]);
+
   const calibrate = useCallback(() => {
     setSetupError(null);
     setGrade(null);
     setBaseline(null);
     pose.clear();
+    if (!framing.ok) {
+      setSetupError(framing.message);
+      return;
+    }
     setPhase("calibrating");
     setCountdown(Math.ceil(CALIBRATION_MS / 1000));
 
@@ -81,7 +100,7 @@ export default function App() {
       pose.clear();
       setPhase("live");
     }, CALIBRATION_MS);
-  }, [pose]);
+  }, [pose, framing]);
 
   const startSet = useCallback(() => {
     pose.clear();
@@ -149,12 +168,13 @@ export default function App() {
               <div><dt>Camera</dt><dd>{cameraBusy ? "starting" : pose.status}</dd></div>
               <div><dt>Pose model</dt><dd>{pose.modelStatus}</dd></div>
               <div><dt>Frame rate</dt><dd className="mono">{pose.fps} fps</dd></div>
+              <div><dt>Capture size</dt><dd className="mono">{pose.resolution ? `${pose.resolution.w} x ${pose.resolution.h}` : "not yet"}</dd></div>
               <div><dt>Inference</dt><dd className="mono">{pose.inferenceMs.toFixed(1)} ms</dd></div>
               <div><dt>Backend</dt><dd>{pose.delegate || "not started"}</dd></div>
               <div><dt>Measured side</dt><dd>{side}</dd></div>
-              <div><dt>Knee angle</dt><dd className="mono">{live ? `${live.kneeAngle.toFixed(1)} deg` : "not yet"}</dd></div>
-              <div><dt>Trunk lean</dt><dd className="mono">{live ? `${live.trunkLean.toFixed(1)} deg` : "not yet"}</dd></div>
-              <div><dt>Joint visibility</dt><dd className="mono">{live ? `${(live.visibility * 100).toFixed(0)} pct` : "not yet"}</dd></div>
+              <div><dt>Knee angle</dt><dd className="mono">{live ? `${live.kneeAngle.toFixed(1)} deg` : pose.latest ? "cannot see" : "not yet"}</dd></div>
+              <div><dt>Trunk lean</dt><dd className="mono">{live ? `${live.trunkLean.toFixed(1)} deg` : pose.latest ? "cannot see" : "not yet"}</dd></div>
+              <div><dt>Joint visibility</dt><dd className="mono">{pose.latest ? `${(framing.visibility * 100).toFixed(0)} pct` : "not yet"}</dd></div>
               <div><dt>Calibrated</dt><dd>{baseline ? "yes" : "no"}</dd></div>
             </dl>
 
@@ -165,6 +185,63 @@ export default function App() {
               </output>
             )}
           </aside>
+          {pose.status === "running" && (
+            <div className="framing">
+              <h2>Framing</h2>
+
+              <p className={`verdict-line ${framing.ok ? "good" : "bad"}`} aria-live="polite">
+                <span className="glyph" aria-hidden="true">{framing.ok ? "\u2713" : "!"}</span>
+                {framing.message}
+              </p>
+
+              {pose.cameras.length > 1 && (
+                <p className="field">
+                  <label htmlFor="camera-pick">Camera</label>
+                  <select
+                    id="camera-pick"
+                    value={pose.deviceId ?? ""}
+                    onChange={(e) => {
+                      pose.stop();
+                      void pose.start("lite", e.target.value);
+                    }}
+                  >
+                    {pose.cameras.map((c, i) => (
+                      <option key={c.deviceId} value={c.deviceId}>
+                        {c.label || `Camera ${i + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                </p>
+              )}
+
+              {pose.zoom ? (
+                <p className="field">
+                  <label htmlFor="zoom">Zoom</label>
+                  <input
+                    id="zoom"
+                    type="range"
+                    min={pose.zoom.min}
+                    max={pose.zoom.max}
+                    step={(pose.zoom.max - pose.zoom.min) / 100}
+                    value={pose.zoom.value}
+                    onChange={(e) => pose.setZoom(Number(e.target.value))}
+                  />
+                  <span className="mono">{pose.zoom.value.toFixed(1)}x</span>
+                </p>
+              ) : (
+                <p className="hint">
+                  This camera exposes no zoom control, so framing is down to where you stand and
+                  what the camera does on its own.
+                </p>
+              )}
+
+              <p className="hint">
+                Still too tight on a MacBook? That is Center Stage following your face. Turn it off
+                in Control Center, Video Effects, while this page has the camera. A phone on a
+                tripod further back beats the built-in camera for a full-body shot.
+              </p>
+            </div>
+          )}
         </section>
 
         {(pose.error || setupError) && (
@@ -176,11 +253,18 @@ export default function App() {
             <span className="n mono">1</span>
             <div>
               <strong>Turn the camera on</strong>
-              <span>Stand side-on, roughly two metres back, whole body in frame.</span>
+              <span>
+                Stand side-on, roughly two metres back, whole body in frame. Turning it off
+                releases the camera and clears the baseline.
+              </span>
             </div>
-            <button className="primary" onClick={startCamera} disabled={pose.status !== "idle"}>
-              {cameraBusy ? "Starting" : "Start camera"}
-            </button>
+            {pose.status === "running" ? (
+              <button onClick={stopCamera}>Turn camera off</button>
+            ) : (
+              <button className="primary" onClick={startCamera} disabled={pose.status !== "idle"}>
+                {cameraBusy ? "Starting" : "Start camera"}
+              </button>
+            )}
           </li>
           <li>
             <span className="n mono">2</span>

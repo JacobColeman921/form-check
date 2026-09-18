@@ -15,12 +15,19 @@ export interface PoseStream {
   fps: number;
   inferenceMs: number;
   delegate: string;
+  /** Actual negotiated capture size, which is often not what was requested. */
+  resolution: { w: number; h: number } | null;
+  /** Optical or digital zoom, when the camera exposes it. */
+  zoom: { min: number; max: number; value: number } | null;
+  setZoom: (v: number) => void;
+  cameras: MediaDeviceInfo[];
+  deviceId: string | null;
   /** Most recent frame, for drawing. */
   latest: LandmarkFrame | null;
   /** Everything captured since the last clear, for grading. */
   frames: React.RefObject<LandmarkFrame[]>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
-  start: (model?: ModelName) => Promise<void>;
+  start: (model?: ModelName, deviceId?: string) => Promise<void>;
   stop: () => void;
   clear: () => void;
 }
@@ -40,6 +47,10 @@ export function usePoseStream(): PoseStream {
   const [inferenceMs, setInferenceMs] = useState(0);
   const [delegate, setDelegate] = useState("");
   const [latest, setLatest] = useState<LandmarkFrame | null>(null);
+  const [resolution, setResolution] = useState<{ w: number; h: number } | null>(null);
+  const [zoom, setZoomState] = useState<{ min: number; max: number; value: number } | null>(null);
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
@@ -48,6 +59,7 @@ export function usePoseStream(): PoseStream {
   const rvfcRef = useRef<number | null>(null);
   const recentRef = useRef<number[]>([]);
   const runningRef = useRef(false);
+  const trackRef = useRef<MediaStreamTrack | null>(null);
 
   const stop = useCallback(() => {
     runningRef.current = false;
@@ -61,10 +73,22 @@ export function usePoseStream(): PoseStream {
     workerRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    trackRef.current = null;
+    setResolution(null);
+    setZoomState(null);
     if (v) v.srcObject = null;
     setStatus("idle");
     // A failed model is a diagnosis worth keeping on screen after teardown.
     setModelStatus((m) => (m === "failed" ? "failed" : "idle"));
+  }, []);
+
+  const setZoom = useCallback((v: number) => {
+    const track = trackRef.current;
+    if (!track) return;
+    track
+      .applyConstraints({ advanced: [{ zoom: v }] })
+      .then(() => setZoomState((z) => (z ? { ...z, value: v } : z)))
+      .catch(() => undefined);
   }, []);
 
   const clear = useCallback(() => {
@@ -72,7 +96,7 @@ export function usePoseStream(): PoseStream {
   }, []);
 
   const start = useCallback(
-    async (model: ModelName = "lite") => {
+    async (model: ModelName = "lite", wantedDeviceId?: string) => {
       setError(null);
       setStatus("starting");
       setModelStatus("loading");
@@ -154,7 +178,16 @@ export function usePoseStream(): PoseStream {
 
         const camera = navigator.mediaDevices
           .getUserMedia({
-            video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+            // Ask for the sensor's full frame, not a crop of it. Requesting a
+            // small size lets the browser satisfy it by cropping, which reads
+            // as a zoomed-in camera and cuts your feet out of the shot.
+            // resizeMode "none" forbids that crop-and-scale entirely.
+            video: {
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              resizeMode: "none",
+              ...(wantedDeviceId ? { deviceId: { exact: wantedDeviceId } } : { facingMode: "user" }),
+            },
             audio: false,
           })
           .catch((err: unknown) => {
@@ -201,6 +234,39 @@ export function usePoseStream(): PoseStream {
         if (!video) throw new Error("Video element is not mounted.");
         video.srcObject = stream;
         await video.play();
+
+        const track = stream.getVideoTracks()[0];
+        trackRef.current = track;
+
+        const settings = track.getSettings();
+        setResolution(
+          settings.width && settings.height ? { w: settings.width, h: settings.height } : null,
+        );
+        setDeviceId(settings.deviceId ?? null);
+
+        // Some cameras expose zoom. Pull it to the widest setting, because the
+        // whole body has to be in frame and the default is often zoomed in.
+        const caps: MediaTrackCapabilities = track.getCapabilities ? track.getCapabilities() : {};
+        if (caps.zoom) {
+          try {
+            await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
+          } catch {
+            // Not fatal. The camera simply keeps whatever zoom it had.
+          }
+          const now = track.getSettings();
+          setZoomState({ min: caps.zoom.min, max: caps.zoom.max, value: now.zoom ?? caps.zoom.min });
+        } else {
+          setZoomState(null);
+        }
+
+        // Labels are only populated once permission has been granted, so this
+        // has to come after getUserMedia rather than before it.
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          setCameras(devices.filter((d) => d.kind === "videoinput"));
+        } catch {
+          setCameras([]);
+        }
 
         // The CPU fallback replaces the worker, so bind results to whichever
         // one actually finished init, not to the one we started with.
@@ -261,5 +327,8 @@ export function usePoseStream(): PoseStream {
 
   useEffect(() => stop, [stop]);
 
-  return { status, modelStatus, error, fps, inferenceMs, delegate, latest, frames: framesRef, videoRef, start, stop, clear };
+  return {
+    status, modelStatus, error, fps, inferenceMs, delegate, resolution, zoom, setZoom,
+    cameras, deviceId, latest, frames: framesRef, videoRef, start, stop, clear,
+  };
 }
