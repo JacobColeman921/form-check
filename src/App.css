@@ -1,0 +1,36 @@
+.app { max-width: 1040px; margin: 0 auto; padding: 34px 20px 80px; }
+
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ok); margin: 0; }
+.head h1 { font-size: clamp(30px, 5vw, 42px); margin: 10px 0 0; letter-spacing: -.02em; }
+.sub { color: var(--text-mid); max-width: 62ch; margin: 12px 0 0; }
+.boundary { font-size: 12.5px; color: var(--text-dim); max-width: 78ch; margin: 14px 0 0; border-left: 2px solid var(--edge); padding-left: 12px; line-height: 1.55; }
+
+.stage { display: grid; grid-template-columns: 1fr 300px; gap: 20px; margin-top: 26px; }
+
+.viewport { position: relative; background: #000; border: 1px solid var(--edge-soft); border-radius: var(--r); overflow: hidden; aspect-ratio: 16 / 9; }
+.video, .overlay { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.scrim { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 8px; background: rgba(11,16,22,.82); color: var(--text-mid); }
+.big { font-size: 64px; font-weight: 700; color: var(--ok); margin: 0; line-height: 1; }
+.scrim p { margin: 0; }
+
+.panel { background: var(--deep); border: 1px solid var(--edge-soft); border-radius: var(--r); padding: 16px 18px; }
+.panel h2 { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 12px; font-weight: 600; }
+.readout { margin: 0; display: grid; gap: 7px; }
+.readout div { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.readout dt { font-size: 12.5px; color: var(--text-dim); }
+.readout dd { margin: 0; font-size: 13.5px; }
+.reps { margin: 16px 0 0; font-size: 34px; font-weight: 700; color: var(--ok); text-align: center; }
+
+.alert { margin: 16px 0 0; padding: 12px 15px; border-radius: var(--r); background: var(--warn-dim); border: 1px solid rgba(245,162,59,.4); color: var(--warn); font-size: 14px; }
+
+.steps { list-style: none; margin: 26px 0 0; padding: 0; display: grid; gap: 9px; }
+.steps li { display: grid; grid-template-columns: 30px 1fr auto; gap: 14px; align-items: center; background: var(--deep); border: 1px solid var(--edge-soft); border-radius: var(--r); padding: 15px 17px; }
+.steps .n { color: var(--ok); font-weight: 700; }
+.steps strong { display: block; font-size: 14.5px; }
+.steps span:not(.n) { display: block; font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+
+@media (max-width: 860px) {
+  .stage { grid-template-columns: 1fr; }
+  .steps li { grid-template-columns: 26px 1fr; }
+  .steps button { grid-column: 2; justify-self: start; margin-top: 8px; }
+}
