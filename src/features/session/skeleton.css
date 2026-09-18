@@ -3,16 +3,16 @@
   inset: 0;
   display: grid;
   place-content: center;
-  gap: 22px;
+  gap: 24px;
   justify-items: center;
-  background: var(--deep);
+  background: var(--surface-2);
 }
 
 .sk-figure { position: relative; width: 120px; height: 180px; }
 
 .sk-bone, .sk-dot {
   position: absolute;
-  background: linear-gradient(100deg, var(--panel) 30%, var(--panel-2) 50%, var(--panel) 70%);
+  background: linear-gradient(100deg, var(--surface-3) 30%, #e2e1dd 50%, var(--surface-3) 70%);
   background-size: 260% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 999px;
@@ -32,8 +32,8 @@
   to { background-position: -80% 0; }
 }
 
-.sk-note { margin: 0; font-size: 13px; color: var(--text-dim); }
+.sk-note { margin: 0; font-size: 13px; color: var(--ink-mid); }
 
 @media (prefers-reduced-motion: reduce) {
-  .sk-bone, .sk-dot { animation: none; background: var(--panel-2); }
+  .sk-bone, .sk-dot { animation: none; background: var(--surface-3); }
 }

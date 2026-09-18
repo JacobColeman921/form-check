@@ -1,11 +1,10 @@
-/* Asymmetric container. Content sits left of centre with a wide right gutter
-   rather than being centred, per the anti-centre-bias rule. */
+/* Editorial macro-whitespace, content constrained, asymmetric right gutter. */
 .app {
-  max-width: 1240px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 48px 24px 96px;
+  padding: 72px 24px 120px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 6vw;
+  grid-template-columns: minmax(0, 1fr) 5vw;
 }
 .app > * { grid-column: 1; }
 
@@ -13,53 +12,55 @@
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: .16em;
+  letter-spacing: .12em;
   text-transform: uppercase;
-  color: var(--ok);
+  color: var(--ink-dim);
   margin: 0;
 }
 
-/* Hierarchy by weight and colour, not by scale. The heading does not shout. */
+/* Hierarchy by weight and space, not scale. */
 .head h1 {
-  font-size: clamp(27px, 3.4vw, 38px);
+  font-size: clamp(30px, 3.6vw, 42px);
   font-weight: 600;
-  letter-spacing: -.028em;
-  line-height: 1.04;
-  margin: 12px 0 0;
+  letter-spacing: -.032em;
+  line-height: 1.06;
+  margin: 14px 0 0;
 }
 
-.sub { color: var(--text-mid); max-width: 58ch; margin: 14px 0 0; font-size: 16px; }
+.sub { color: var(--ink-2); max-width: 56ch; margin: 18px 0 0; font-size: 16.5px; }
 
 .boundary {
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--ink-mid);
   max-width: 68ch;
-  margin: 18px 0 0;
-  padding-left: 14px;
-  border-left: 1px solid var(--edge);
-  line-height: 1.6;
+  margin: 22px 0 0;
+  padding-left: 16px;
+  border-left: 1px solid var(--line-strong);
+  line-height: 1.65;
 }
 
-/* Deliberately uneven split rather than a symmetrical two-up. */
 .stage {
   display: grid;
-  grid-template-columns: minmax(0, 1.62fr) minmax(250px, .38fr);
-  gap: 22px;
-  margin-top: 34px;
+  grid-template-columns: minmax(0, 1.68fr) minmax(244px, .32fr);
+  gap: 24px;
+  margin-top: 52px;
   align-items: start;
 }
 
 .viewport {
   position: relative;
   margin: 0;
-  background: var(--deep);
-  border: 1px solid var(--edge-soft);
+  background: var(--video-bg);
+  border: 1px solid var(--line);
   border-radius: var(--r-lg);
   overflow: hidden;
   aspect-ratio: 16 / 9;
   box-shadow: var(--lift);
 }
 .video, .overlay { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+
+/* Before the camera runs the box is paper, not a black hole. */
+.viewport:has(.scrim) { background: var(--surface-2); }
 
 .scrim {
   position: absolute;
@@ -68,43 +69,30 @@
   place-content: center;
   justify-items: center;
   text-align: center;
-  gap: 10px;
-  background: color-mix(in srgb, var(--void) 84%, transparent);
-  color: var(--text-mid);
+  gap: 12px;
+  background: var(--surface-2);
+  color: var(--ink-mid);
   font-size: 14px;
 }
-.count { font-size: 58px; font-weight: 600; color: var(--ok); line-height: 1; letter-spacing: -.03em; }
-.off-mark {
-  width: 34px; height: 34px;
-  border: 2px solid var(--text-dim);
-  border-radius: 50%;
-  position: relative;
-}
+.count { font-size: 56px; font-weight: 600; color: var(--ink); line-height: 1; letter-spacing: -.04em; }
+.off-mark { width: 32px; height: 32px; border: 1.5px solid var(--ink-dim); border-radius: 50%; position: relative; }
 .off-mark::after {
   content: "";
   position: absolute;
   inset: -2px auto -2px 50%;
-  width: 2px;
-  background: var(--text-dim);
+  width: 1.5px;
+  background: var(--ink-dim);
   transform: rotate(45deg);
-  transform-origin: center;
 }
 
-/* No card. Logic grouping by a single rule and negative space. */
 .panel {
-  border: 1px solid var(--edge-soft);
+  border: 1px solid var(--line);
   border-radius: var(--r-lg);
-  background: var(--deep);
-  padding: 18px 20px 20px;
+  background: var(--surface);
+  padding: 22px 24px 24px;
   box-shadow: var(--lift);
 }
-.panel h2 {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -.005em;
-  color: var(--text-mid);
-  margin: 0 0 4px;
-}
+.panel h2 { font-size: 13px; font-weight: 600; color: var(--ink); margin: 0 0 6px; letter-spacing: -.005em; }
 
 .readout { margin: 0; display: grid; }
 .readout div {
@@ -112,56 +100,58 @@
   justify-content: space-between;
   gap: 12px;
   align-items: baseline;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--edge-soft);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
 }
 .readout div:last-child { border-bottom: 0; }
-.readout dt { font-size: 13px; color: var(--text-dim); }
-.readout dd { margin: 0; font-size: 13.5px; font-weight: 500; }
+.readout dt { font-size: 13px; color: var(--ink-mid); }
+.readout dd { margin: 0; font-size: 13.5px; font-weight: 500; color: var(--ink); }
 
 .reps {
   display: flex;
   align-items: baseline;
   justify-content: center;
   gap: 9px;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--edge);
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-strong);
 }
-.reps-n { font-size: 40px; font-weight: 600; color: var(--ok); letter-spacing: -.035em; line-height: 1; }
-.reps-l { font-size: 13px; color: var(--text-dim); }
+.reps-n { font-size: 40px; font-weight: 600; color: var(--ink); letter-spacing: -.04em; line-height: 1; }
+.reps-l { font-size: 13px; color: var(--ink-mid); }
 
+/* Alert is ink on paper with a rule, not a coloured panel. */
 .alert {
-  margin: 18px 0 0;
-  padding: 13px 16px;
+  margin: 22px 0 0;
+  padding: 14px 18px;
   border-radius: var(--r-md);
-  background: var(--warn-dim);
-  border: 1px solid color-mix(in srgb, var(--warn) 42%, transparent);
-  color: var(--warn);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--ink);
+  color: var(--ink-2);
   font-size: 14px;
   max-width: 72ch;
 }
 
-.steps { list-style: none; margin: 30px 0 0; padding: 0; display: grid; }
+.steps { list-style: none; margin: 44px 0 0; padding: 0; display: grid; }
 .steps li {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  gap: 16px;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 18px;
   align-items: center;
-  padding: 17px 2px 18px;
-  border-bottom: 1px solid var(--edge-soft);
+  padding: 22px 2px;
+  border-bottom: 1px solid var(--line);
 }
-.steps li:first-child { border-top: 1px solid var(--edge-soft); }
-.steps .n { color: var(--text-dim); font-weight: 500; font-size: 13px; }
-.steps strong { display: block; font-size: 15px; font-weight: 600; letter-spacing: -.008em; }
-.steps div > span { display: block; font-size: 13.5px; color: var(--text-dim); margin-top: 3px; max-width: 56ch; }
+.steps li:first-child { border-top: 1px solid var(--line); }
+.steps .n { color: var(--ink-dim); font-weight: 500; font-size: 12.5px; }
+.steps strong { display: block; font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -.008em; }
+.steps div > span { display: block; font-size: 13.5px; color: var(--ink-mid); margin-top: 4px; max-width: 58ch; }
 
 @media (max-width: 900px) {
-  .app { grid-template-columns: 1fr; padding: 34px 16px 72px; }
+  .app { grid-template-columns: 1fr; padding: 40px 16px 80px; }
   .stage { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
-  .steps li { grid-template-columns: 24px minmax(0, 1fr); }
-  .steps button { grid-column: 2; justify-self: start; margin-top: 10px; }
+  .steps li { grid-template-columns: 22px minmax(0, 1fr); }
+  .steps button { grid-column: 2; justify-self: start; margin-top: 12px; }
 }

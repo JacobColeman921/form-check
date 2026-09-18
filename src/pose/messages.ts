@@ -14,5 +14,5 @@ export type ToWorker =
 
 export type FromWorker =
   | { type: "ready"; delegate: string }
-  | { type: "error"; message: string }
+  | { type: "error"; message: string; fatal?: boolean }
   | { type: "result"; t: number; points: Landmark[]; inferenceMs: number };

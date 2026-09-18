@@ -1,42 +1,39 @@
 @import "@fontsource-variable/geist/index.css";
 @import "@fontsource-variable/geist-mono/index.css";
 
+/*
+ * Strict monochrome. Warm bone canvas, off-black ink, one hairline rule value.
+ * No hue anywhere: the three judgement states are carried by fill, border and
+ * glyph rather than by colour, which is both the brief and a stronger WCAG
+ * position than a traffic light.
+ */
 :root {
-  /* Off-black, never #000. One cool gray family, every surface tinted to the
-     same 207-210 hue, with real tonal steps between them so the interface
-     reads as built rather than flat. */
-  --void: #0b1117;
-  --deep: #121c25;
-  --panel: #1a2733;
-  --panel-2: #22323f;
-  --edge: #2e4354;
-  --edge-soft: #223140;
+  --canvas: #fbfbfa;
+  --surface: #ffffff;
+  --surface-2: #f7f6f3;
+  --surface-3: #efeeea;
+  --video-bg: #191918;
 
-  --text: #eaf2f8;
-  --text-mid: #a8bccb;
-  --text-dim: #7793a6;
+  --line: #eaeaea;
+  --line-strong: #dcdcda;
+  --line-dashed: #c4c3bf;
 
-  /* One accent, plus two semantic states. All three sit under the 80 percent
-     saturation ceiling while staying vivid enough to actually read.
-     ok 69, warn 76, bad 73. */
-  --ok: #3ddcb4;
-  --ok-dim: #10352d;
-  --ok-line: #1f6e5c;
-  --warn: #e8a558;
-  --warn-dim: #332715;
-  --bad: #e8756a;
-  --bad-dim: #331b18;
+  --ink: #191918;
+  --ink-2: #37352f;
+  --ink-mid: #787774;
+  --ink-dim: #9b9a97;
+  --on-ink: #ffffff;
 
-  /* Shadows tinted to the background hue rather than flat black. */
-  --lift: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 20px 38px -24px rgba(5, 12, 20, .95);
+  /* Practically non-existent, per the flat-architecture rule. */
+  --lift: 0 1px 2px rgba(25, 25, 24, .03);
+  --lift-hover: 0 2px 8px rgba(25, 25, 24, .045);
 
-  --sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
-  --mono: "Geist Mono Variable", ui-monospace, Menlo, monospace;
+  --sans: "Geist Variable", "SF Pro Display", "Helvetica Neue", sans-serif;
+  --mono: "Geist Mono Variable", "SF Mono", "JetBrains Mono", monospace;
 
-  /* Radius varies by depth: softer on containers, tighter inside them. */
-  --r-lg: 14px;
-  --r-md: 9px;
-  --r-sm: 5px;
+  --r-lg: 12px;
+  --r-md: 8px;
+  --r-sm: 4px;
 }
 
 * { box-sizing: border-box; }
@@ -46,68 +43,65 @@ html, body, #root { height: 100%; }
 
 body {
   margin: 0;
-  background: var(--void);
-  color: var(--text);
+  background: var(--canvas);
+  color: var(--ink-2);
   font-family: var(--sans);
   font-size: 15px;
   font-weight: 400;
-  line-height: 1.55;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Grain. Fixed and pointer-events-none so it never repaints on scroll. */
+/* Warm grain, fixed and inert so it never repaints on scroll. */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 100;
   pointer-events: none;
-  opacity: .028;
+  opacity: .04;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-h1, h2, h3 { text-wrap: balance; font-weight: 600; }
+h1, h2, h3 { color: var(--ink); text-wrap: balance; font-weight: 600; }
 p { text-wrap: pretty; }
 
 button {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
-  border: 1px solid var(--edge);
-  background: var(--panel);
-  color: var(--text);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
   padding: 9px 16px;
-  border-radius: var(--r-md);
+  border-radius: var(--r-sm);
+  box-shadow: none;
   transition: border-color .2s cubic-bezier(.16, 1, .3, 1),
               background .2s cubic-bezier(.16, 1, .3, 1),
               transform .12s cubic-bezier(.16, 1, .3, 1);
 }
-button:hover:not(:disabled) { border-color: var(--ok-line); background: var(--panel-2); }
-/* Tactile press. The interface should feel like it has a surface. */
-button:active:not(:disabled) { transform: translateY(1px) scale(.985); }
+button:hover:not(:disabled) { border-color: var(--ink-mid); background: var(--surface-2); }
+button:active:not(:disabled) { transform: scale(.98); }
 button:disabled { opacity: .38; cursor: not-allowed; }
-button.primary {
-  background: var(--ok-dim);
-  border-color: color-mix(in srgb, var(--ok) 55%, transparent);
-  color: var(--ok);
-  font-weight: 600;
-}
-button:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+
+/* Solid ink CTA, white label. No shadow. */
+button.primary { background: var(--ink); border-color: var(--ink); color: var(--on-ink); font-weight: 500; }
+button.primary:hover:not(:disabled) { background: #333331; border-color: #333331; }
+
+button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-/* Keyboard users land here first. */
 .skip {
   position: absolute;
   left: -9999px;
   top: 8px;
   z-index: 200;
-  background: var(--panel);
-  border: 1px solid var(--ok);
-  border-radius: var(--r-md);
+  background: var(--ink);
+  color: var(--on-ink);
+  border-radius: var(--r-sm);
   padding: 10px 16px;
-  color: var(--ok);
 }
 .skip:focus { left: 16px; }
 

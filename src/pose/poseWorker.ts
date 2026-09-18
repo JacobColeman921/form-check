@@ -42,10 +42,22 @@ let landmarker: WPoseLandmarker | null = null;
 let busy = false;
 let bundleLoaded = false;
 
+/*
+ * Inference runs about thirty times a second. Reporting every failure floods
+ * the UI with the same message and buries the first, genuine one. Count
+ * consecutive failures instead, report once when the run is clearly dead, and
+ * then stop trying.
+ */
+let consecutiveFailures = 0;
+let halted = false;
+const FAILURE_LIMIT = 5;
+
 ctx.onmessage = async (event: MessageEvent) => {
   const msg = event.data;
 
   if (msg.type === "init") {
+    consecutiveFailures = 0;
+    halted = false;
     try {
       if (!bundleLoaded) {
         importScripts(msg.bundleUrl);
@@ -76,7 +88,7 @@ ctx.onmessage = async (event: MessageEvent) => {
   if (msg.type === "frame") {
     // Drop the frame rather than queue it. A backlog turns into latency, and
     // stale feedback is worse than a lower frame rate.
-    if (!landmarker || busy) {
+    if (!landmarker || busy || halted) {
       msg.bitmap.close();
       return;
     }
@@ -98,8 +110,18 @@ ctx.onmessage = async (event: MessageEvent) => {
         }));
         ctx.postMessage({ type: "result", t: msg.t, points, inferenceMs: performance.now() - started });
       }
+      consecutiveFailures = 0;
     } catch (err) {
-      ctx.postMessage({ type: "error", message: err instanceof Error ? err.message : String(err) });
+      consecutiveFailures++;
+      if (consecutiveFailures >= FAILURE_LIMIT) {
+        halted = true;
+        const why = err instanceof Error ? err.message : String(err);
+        ctx.postMessage({
+          type: "error",
+          fatal: true,
+          message: `Inference failed ${FAILURE_LIMIT} times in a row and has stopped. Last error: ${why}`,
+        });
+      }
     } finally {
       msg.bitmap.close();
       busy = false;

@@ -94,7 +94,7 @@ export function usePoseStream(): PoseStream {
         // Try GPU, fall back to CPU. Some Safari builds refuse the WebGL
         // delegate inside a worker, and CPU at a lower frame rate beats
         // nothing at all.
-        const init = (delegate: "GPU" | "CPU") =>
+        const initOn = (worker: Worker, delegate: "GPU" | "CPU") =>
           new Promise<void>((resolve, reject) => {
             // A worker that dies before running our code fires onerror, not a
             // message. Without this and the timeout below, a broken worker
@@ -121,7 +121,7 @@ export function usePoseStream(): PoseStream {
             };
             const timer = setTimeout(() => {
               cleanup();
-              reject(new Error(bootError ?? "The pose model timed out after 60 seconds."));
+              reject(new Error(bootError ?? "The pose model timed out after 20 seconds."));
             }, 20_000);
 
             worker.addEventListener("message", onMessage);
@@ -135,8 +135,17 @@ export function usePoseStream(): PoseStream {
             } satisfies ToWorker);
           });
 
-        const modelReady = init("GPU")
-          .catch(() => init("CPU"))
+        const modelReady = initOn(worker, "GPU")
+          .catch(() => {
+            // Do not re-init a worker that just failed. Tear it down and start
+            // clean, or a half-built GPU context leaks into the CPU attempt.
+            worker.removeEventListener("error", bootWatch);
+            worker.terminate();
+            const cpuWorker = new Worker(new URL("./poseWorker.ts", import.meta.url));
+            workerRef.current = cpuWorker;
+            cpuWorker.addEventListener("error", bootWatch);
+            return initOn(cpuWorker, "CPU");
+          })
           .then(() => setModelStatus("ready"))
           .catch((err) => {
             setModelStatus("failed");
@@ -184,7 +193,12 @@ export function usePoseStream(): PoseStream {
         video.srcObject = stream;
         await video.play();
 
-        worker.addEventListener("message", (e: MessageEvent<FromWorker>) => {
+        // The CPU fallback replaces the worker, so bind results to whichever
+        // one actually finished init, not to the one we started with.
+        const active = workerRef.current;
+        if (!active) throw new Error("The pose worker went away during start-up.");
+
+        active.addEventListener("message", (e: MessageEvent<FromWorker>) => {
           const m = e.data;
           if (m.type === "result") {
             const frame: LandmarkFrame = { t: m.t, points: m.points };
@@ -199,7 +213,12 @@ export function usePoseStream(): PoseStream {
             }
             setFps(recentRef.current.length);
           } else if (m.type === "error") {
-            setError(m.message);
+            // Never let the same message stack up in the UI.
+            setError((prev) => (prev === m.message ? prev : m.message));
+            if (m.fatal) {
+              runningRef.current = false;
+              setStatus("error");
+            }
           }
         });
 

@@ -40,7 +40,7 @@ export function drawSkeleton(
     const pb = points[b];
     if (!pa || !pb) continue;
     const active = measured.has(a) && measured.has(b);
-    ctx.strokeStyle = active ? "#3FD6B4" : "rgba(160,180,195,0.28)";
+    ctx.strokeStyle = active ? "#ffffff" : "rgba(255,255,255,0.22)";
     ctx.lineWidth = active ? 4 : 2;
     ctx.beginPath();
     ctx.moveTo(...px(pa));
@@ -52,9 +52,10 @@ export function drawSkeleton(
     if (!measured.has(i)) continue;
     const p = points[i];
     const [x, y] = px(p);
-    // Radius encodes confidence, so a weak landmark is visible as weak
-    // without relying on colour alone.
-    ctx.fillStyle = p.visibility > 0.6 ? "#3FD6B4" : "#F5A23B";
+    // Radius encodes confidence. A weak landmark also drops to an outline
+    // rather than changing hue, so the overlay stays monochrome and still
+    // reads at a glance.
+    ctx.fillStyle = p.visibility > 0.6 ? "#ffffff" : "rgba(255,255,255,0.35)";
     ctx.beginPath();
     ctx.arc(x, y, 3 + p.visibility * 4, 0, Math.PI * 2);
     ctx.fill();
