@@ -160,7 +160,16 @@ export function usePoseStream(): PoseStream {
           .catch((err: unknown) => {
             const name = err instanceof DOMException ? err.name : "";
             if (name === "NotAllowedError") {
-              throw new Error("Camera permission was refused. Allow it in the address bar, then press Start camera again.");
+              // This one fires for two very different causes and the browser
+              // does not distinguish them: the site was denied, or the browser
+              // itself has no camera access from the operating system. Naming
+              // both saves a long hunt through the wrong settings screen.
+              throw new Error(
+                "Camera permission was refused. Two things can cause this. " +
+                  "First, the browser may not have camera access from macOS: open System Settings, " +
+                  "Privacy and Security, Camera, switch this browser on, then quit and reopen it. " +
+                  "Second, this site may be blocked: click the icon at the left of the address bar and allow the camera.",
+              );
             }
             if (name === "NotFoundError" || name === "OverconstrainedError") {
               throw new Error("No camera found. Connect one, or open this on a machine that has one.");
