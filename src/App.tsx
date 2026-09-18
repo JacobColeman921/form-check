@@ -146,7 +146,8 @@ export default function App() {
           <aside className="panel" aria-label="Live readout">
             <h2>Readout</h2>
             <dl className="readout">
-              <div><dt>Status</dt><dd>{cameraBusy ? "starting" : pose.status}</dd></div>
+              <div><dt>Camera</dt><dd>{cameraBusy ? "starting" : pose.status}</dd></div>
+              <div><dt>Pose model</dt><dd>{pose.modelStatus}</dd></div>
               <div><dt>Frame rate</dt><dd className="mono">{pose.fps} fps</dd></div>
               <div><dt>Inference</dt><dd className="mono">{pose.inferenceMs.toFixed(1)} ms</dd></div>
               <div><dt>Backend</dt><dd>{pose.delegate || "not started"}</dd></div>

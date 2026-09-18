@@ -1,15 +1,20 @@
 /**
- * Model and runtime assets.
+ * Model and runtime assets, served from this origin.
  *
- * These load from a CDN so the spike runs with no build step. Before this ships
- * they should be vendored into public/ so the app works offline and cannot
- * break when a CDN moves a file.
+ * Vendored rather than pulled from a CDN so the app works offline, cannot break
+ * when a CDN moves a file, and cannot drift out of sync with the installed
+ * @mediapipe/tasks-vision version. It also keeps the privacy claim honest:
+ * nothing about a session leaves this machine, including asset requests.
  */
-export const WASM_BASE = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm";
+const BASE = import.meta.env.BASE_URL;
+
+export const WASM_BASE = `${BASE}mediapipe`;
+
+/** The UMD build, pulled into the classic worker with importScripts. */
+export const BUNDLE_URL = `${BASE}mediapipe/vision_bundle.js`;
 
 export const MODELS = {
-  lite: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-  full: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+  lite: `${BASE}models/pose_landmarker_lite.task`,
 } as const;
 
 export type ModelName = keyof typeof MODELS;
