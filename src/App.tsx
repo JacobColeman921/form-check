@@ -141,7 +141,10 @@ export default function App() {
         </header>
 
         <section className="stage" aria-label="Camera and live readout">
-          <figure className="viewport">
+          <figure
+            className="viewport"
+            style={pose.resolution ? { aspectRatio: `${pose.resolution.w} / ${pose.resolution.h}` } : undefined}
+          >
             <video ref={pose.videoRef} playsInline muted className="video" />
             <canvas ref={canvasRef} className="overlay" aria-hidden="true" />
 

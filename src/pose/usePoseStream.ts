@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BUNDLE_URL, MODELS, WASM_BASE, type ModelName } from "./config";
+import { fitWithin } from "./fit";
 import type { FromWorker, ToWorker } from "./messages";
 import type { LandmarkFrame } from "../domain/types";
 
 export type StreamStatus = "idle" | "starting" | "running" | "error";
 export type ModelStatus = "idle" | "loading" | "ready" | "failed";
+
+/** Longest edge handed to the model. Pose does not need camera resolution. */
+const INFERENCE_MAX_EDGE = 640;
 
 export interface PoseStream {
   status: StreamStatus;
@@ -67,6 +71,7 @@ export function usePoseStream(): PoseStream {
   const runningRef = useRef(false);
   const trackRef = useRef<MediaStreamTrack | null>(null);
   const facingRef = useRef<"user" | "environment">("user");
+  const scratchRef = useRef<HTMLCanvasElement | null>(null);
   const startRef = useRef<PoseStream["start"] | null>(null);
 
   const stop = useCallback(() => {
@@ -200,13 +205,13 @@ export function usePoseStream(): PoseStream {
 
         const camera = navigator.mediaDevices
           .getUserMedia({
-            // Ask for the sensor's full frame, not a crop of it. Requesting a
-            // small size lets the browser satisfy it by cropping, which reads
-            // as a zoomed-in camera and cuts your feet out of the shot.
-            // resizeMode "none" forbids that crop-and-scale entirely.
+            // No size request at all. Asking for a specific size lets the
+            // browser satisfy it by cropping the sensor, which is what made
+            // the camera look zoomed in. Omitting it hands over the camera's
+            // natural mode at full field of view, and resizeMode forbids the
+            // crop outright. Downscaling for inference happens in the pump,
+            // where it costs nothing.
             video: {
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
               resizeMode: "none",
               ...(wantedDeviceId ? { deviceId: { exact: wantedDeviceId } } : { facingMode: useFacing }),
             },
@@ -326,18 +331,47 @@ export function usePoseStream(): PoseStream {
           if (!runningRef.current || !videoRef.current || !workerRef.current) return;
           const v = videoRef.current;
           if (v.videoWidth > 0) {
-            createImageBitmap(v)
-              .then((bitmap) => {
-                workerRef.current?.postMessage(
-                  { type: "frame", bitmap, t: meta.mediaTime * 1000 } satisfies ToWorker,
-                  [bitmap],
-                );
-              })
-              .catch(() => undefined);
+            // Downscale through a reused canvas rather than handing the worker
+            // a full-resolution bitmap. This is the memory fix, and it also
+            // sidesteps createImageBitmap(video), which is unreliable on iOS.
+            const { w, h } = fitWithin(v.videoWidth, v.videoHeight, INFERENCE_MAX_EDGE);
+            const canvas = (scratchRef.current ??= document.createElement("canvas"));
+            if (canvas.width !== w) { canvas.width = w; canvas.height = h; }
+            const g = canvas.getContext("2d");
+            if (g) {
+              g.drawImage(v, 0, 0, w, h);
+              createImageBitmap(canvas)
+                .then((bitmap) => {
+                  workerRef.current?.postMessage(
+                    { type: "frame", bitmap, t: meta.mediaTime * 1000 } satisfies ToWorker,
+                    [bitmap],
+                  );
+                })
+                // Say it once. Swallowing this is how a dead pump reads as
+                // "camera running, 0 fps" with nothing to go on.
+                .catch((err: unknown) => {
+                  const why = err instanceof Error ? err.message : String(err);
+                  setError((prev) => prev ?? `Could not read a frame from the camera: ${why}`);
+                });
+            }
           }
-          rvfcRef.current = v.requestVideoFrameCallback(pump);
+          schedule(pump);
         };
-        rvfcRef.current = video.requestVideoFrameCallback(pump);
+
+        // requestVideoFrameCallback follows the camera clock and never samples
+        // a frame twice. Firefox does not have it, and a missing scheduler is
+        // indistinguishable from a dead pump, so fall back to rAF there.
+        function schedule(fn: (now: number, meta: { mediaTime: number }) => void) {
+          const v = videoRef.current;
+          if (!v) return;
+          if (typeof v.requestVideoFrameCallback === "function") {
+            rvfcRef.current = v.requestVideoFrameCallback(fn);
+          } else {
+            requestAnimationFrame((now) => fn(now, { mediaTime: v.currentTime }));
+          }
+        }
+
+        schedule(pump);
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
         setStatus("error");
