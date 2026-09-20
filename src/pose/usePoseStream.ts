@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BUNDLE_URL, MODELS, WASM_BASE, type ModelName } from "./config";
 import { fitWithin } from "./fit";
+import { monotonicClock } from "./clock";
 import type { FromWorker, ToWorker } from "./messages";
 import type { LandmarkFrame } from "../domain/types";
 
@@ -318,7 +319,10 @@ export function usePoseStream(): PoseStream {
             // Never let the same message stack up in the UI.
             setError((prev) => (prev === m.message ? prev : m.message));
             if (m.fatal) {
-              runningRef.current = false;
+              // Release the camera too. Leaving the light on after inference
+              // has given up is both alarming and a dead end, since nothing
+              // else will restart the pump.
+              stop();
               setStatus("error");
             }
           }
@@ -327,7 +331,12 @@ export function usePoseStream(): PoseStream {
         runningRef.current = true;
         setStatus("running");
 
-        const pump = (_now: number, meta: { mediaTime: number }) => {
+        // One clock per camera session. mediaTime is not usable here: it is a
+        // float that repeats and stalls on a live stream, and MediaPipe
+        // refuses any frame not strictly later than the last.
+        const nextTimestamp = monotonicClock();
+
+        const pump = () => {
           if (!runningRef.current || !videoRef.current || !workerRef.current) return;
           const v = videoRef.current;
           if (v.videoWidth > 0) {
@@ -343,7 +352,7 @@ export function usePoseStream(): PoseStream {
               createImageBitmap(canvas)
                 .then((bitmap) => {
                   workerRef.current?.postMessage(
-                    { type: "frame", bitmap, t: meta.mediaTime * 1000 } satisfies ToWorker,
+                    { type: "frame", bitmap, t: nextTimestamp() } satisfies ToWorker,
                     [bitmap],
                   );
                 })
@@ -361,13 +370,13 @@ export function usePoseStream(): PoseStream {
         // requestVideoFrameCallback follows the camera clock and never samples
         // a frame twice. Firefox does not have it, and a missing scheduler is
         // indistinguishable from a dead pump, so fall back to rAF there.
-        function schedule(fn: (now: number, meta: { mediaTime: number }) => void) {
+        function schedule(fn: () => void) {
           const v = videoRef.current;
           if (!v) return;
           if (typeof v.requestVideoFrameCallback === "function") {
-            rvfcRef.current = v.requestVideoFrameCallback(fn);
+            rvfcRef.current = v.requestVideoFrameCallback(() => fn());
           } else {
-            requestAnimationFrame((now) => fn(now, { mediaTime: v.currentTime }));
+            requestAnimationFrame(() => fn());
           }
         }
 

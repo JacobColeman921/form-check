@@ -272,7 +272,7 @@ export default function App() {
             {pose.status === "running" ? (
               <button onClick={stopCamera}>Turn camera off</button>
             ) : (
-              <button className="primary" onClick={startCamera} disabled={pose.status !== "idle"}>
+              <button className="primary" onClick={startCamera} disabled={cameraBusy}>
                 {cameraBusy ? "Starting" : "Start camera"}
               </button>
             )}
