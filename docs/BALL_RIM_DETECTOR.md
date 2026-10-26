@@ -75,7 +75,7 @@ npm run dev
 # Run once with Delegate = GPU and once with CPU, and keep the JSON block shown under the table.
 ```
 
-The page only exists on the dev server; `npm run build` does not ship it or the detector files. For a detection check, choose **My images or one video** and pick a short clip of your own shooting. It is read in the page, sampled at up to 300 frames, and never saved or uploaded. The "Ball found" column then means something.
+The page only exists on the dev server; `npm run build` does not ship it or the detector files. For a detection check, choose **My images or one video** and pick a short clip of your own shooting. It is read in the page, sampled at up to 300 frames, and never saved or uploaded. The "Ball found" column describes detection on a **640 px full frame**. The proposed full-resolution wrist-to-rim crop is not implemented in this benchmark, so this result cannot decide by itself whether the cropped detector is good enough.
 
 Fallback benchmark (RF-DETR, ONNX Runtime with CoreML):
 
@@ -91,7 +91,7 @@ The first run downloads the 366 MB COCO checkpoint and exports ONNX into `bench/
 
 ## What is not known yet
 
-1. Whether Lite0 finds a real basketball often enough, at driveway distance, on your camera. **This decides between the recommended path and the fallback.** It needs one sample clip that only you can provide: 20 to 30 seconds from where you will really put the tripod, with the rim in the upper third of the frame and a few shots. Run it through the benchmark page. If Lite0 with a crop finds the ball in most frames between set and rim, take the recommended path. If it does not, train the fallback.
+1. Whether Lite0 finds a real basketball often enough, at court distance, on your camera. **This decides between the recommended path and the fallback.** It needs one sample clip that only you can provide: 20 to 30 seconds from where you will really put the tripod, with the rim in the upper third of the frame and a few shots. The current benchmark gives a first check on the full 640 px frame. Before choosing a fallback, implement and test the planned full-resolution crop on that same clip. If Lite0 with the crop finds the ball in most frames between set and rim, take the recommended path.
 2. M5 latency and memory for every candidate.
 3. Whether the MediaPipe `.tflite` files carry a license beyond the Apache-2.0 upstream checkpoints. Check Google's object detector page before shipping.
 4. Whether the shot-tracker model ID is downloadable with someone else's Roboflow key. It does not change the decision.
