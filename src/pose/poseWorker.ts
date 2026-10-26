@@ -109,6 +109,10 @@ ctx.onmessage = async (event: MessageEvent) => {
           visibility: p.visibility ?? worldVis?.[i]?.visibility ?? 1,
         }));
         ctx.postMessage({ type: "result", t: msg.t, points, inferenceMs: performance.now() - started });
+      } else {
+        // Tell the UI immediately that the person has left the frame. Without
+        // an empty result, the last skeleton and coaching cue stay on screen.
+        ctx.postMessage({ type: "result", t: msg.t, points: [], inferenceMs: performance.now() - started });
       }
       consecutiveFailures = 0;
     } catch (err) {

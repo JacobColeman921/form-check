@@ -10,6 +10,7 @@ export type ModelStatus = "idle" | "loading" | "ready" | "failed";
 
 /** Longest edge handed to the model. Pose does not need camera resolution. */
 const INFERENCE_MAX_EDGE = 640;
+const MAX_BUFFERED_FRAMES = 3600;
 
 export interface PoseStream {
   status: StreamStatus;
@@ -90,6 +91,10 @@ export function usePoseStream(): PoseStream {
     trackRef.current = null;
     setResolution(null);
     setZoomState(null);
+    setLatest(null);
+    setFps(0);
+    setInferenceMs(0);
+    setDelegate("");
     if (v) v.srcObject = null;
     setStatus("idle");
     // A failed model is a diagnosis worth keeping on screen after teardown.
@@ -204,7 +209,7 @@ export function usePoseStream(): PoseStream {
             throw err;
           });
 
-        const camera = navigator.mediaDevices
+        const cameraRequest = navigator.mediaDevices
           .getUserMedia({
             // No size request at all. Asking for a specific size lets the
             // browser satisfy it by cropping the sensor, which is what made
@@ -241,12 +246,32 @@ export function usePoseStream(): PoseStream {
             throw err instanceof Error ? err : new Error(String(err));
           });
 
+        // A pending browser permission prompt can otherwise leave the button
+        // on "Connecting" forever. A late grant is stopped instead of opening
+        // a stream after the app has already reported the timeout.
+        const camera = new Promise<MediaStream>((resolve, reject) => {
+          let expired = false;
+          const timer = window.setTimeout(() => {
+            expired = true;
+            reject(new Error("Camera access is still waiting. Allow it in the browser's camera prompt, then try again."));
+          }, 15_000);
+          cameraRequest.then((stream) => {
+            window.clearTimeout(timer);
+            if (expired) stream.getTracks().forEach((track) => track.stop());
+            else resolve(stream);
+          }, (error: unknown) => {
+            window.clearTimeout(timer);
+            if (!expired) reject(error);
+          });
+        });
+
         // Settle both before deciding what went wrong. A model failure and a
         // camera failure have completely different fixes, and the model error
         // must never be masked by a permission message.
         const [camRes, modelRes] = await Promise.allSettled([camera, modelReady]);
 
         if (modelRes.status === "rejected") {
+          if (camRes.status === "fulfilled") camRes.value.getTracks().forEach((track) => track.stop());
           const why = modelRes.reason instanceof Error ? modelRes.reason.message : String(modelRes.reason);
           throw new Error(`The pose model did not load: ${why}`);
         }
@@ -265,6 +290,12 @@ export function usePoseStream(): PoseStream {
 
         const track = stream.getVideoTracks()[0];
         trackRef.current = track;
+        track.addEventListener("ended", () => {
+          if (!runningRef.current) return;
+          stop();
+          setError("The camera stopped. Check that another app is not using it, then reconnect.");
+          setStatus("error");
+        });
 
         const settings = track.getSettings();
         setResolution(
@@ -306,6 +337,7 @@ export function usePoseStream(): PoseStream {
           if (m.type === "result") {
             const frame: LandmarkFrame = { t: m.t, points: m.points };
             framesRef.current.push(frame);
+            if (framesRef.current.length > MAX_BUFFERED_FRAMES) framesRef.current.splice(0, 900);
             setLatest(frame);
             setInferenceMs(m.inferenceMs);
 
@@ -383,8 +415,8 @@ export function usePoseStream(): PoseStream {
         schedule(pump);
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
-        setStatus("error");
         stop();
+        setStatus("error");
       }
     },
     [stop, facing],
