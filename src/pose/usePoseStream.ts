@@ -428,7 +428,7 @@ export function usePoseStream(): PoseStream {
 
   return {
     status, modelStatus, error, fps, inferenceMs, delegate, resolution, zoom, setZoom,
-    cameras, deviceId, facing, canFlip: cameras.length > 1, flip,
+    cameras, deviceId, facing, canFlip: /iPhone|iPad|Android/i.test(navigator.userAgent) && cameras.length > 1, flip,
     latest, frames: framesRef, videoRef, start, stop, clear,
   };
 }
