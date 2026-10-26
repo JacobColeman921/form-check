@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>Ball detector benchmark</title>
+    <style>
+      :root { color-scheme: dark; --bg: #171719; --fg: #ececf1; --muted: #9a9aa6; --line: #33333a; --accent: #f08a3c; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; }
+      main { max-width: 960px; margin: 0 auto; }
+      h1 { font-size: 1.3rem; margin: 0 0 4px; }
+      p { color: var(--muted); margin: 0 0 12px; }
+      fieldset { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 12px; padding: 10px 12px; }
+      legend { color: var(--muted); padding: 0 4px; }
+      label { margin-right: 14px; white-space: nowrap; }
+      button { background: var(--accent); color: #111; border: 0; border-radius: 6px; padding: 8px 16px; font-weight: 600; cursor: pointer; }
+      button:disabled { opacity: 0.5; cursor: default; }
+      table { border-collapse: collapse; width: 100%; margin: 12px 0; font-variant-numeric: tabular-nums; }
+      th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; }
+      .scroll { overflow-x: auto; }
+      pre { background: #0f0f11; border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow-x: auto; font-size: 12px; }
+      canvas { max-width: 100%; border: 1px solid var(--line); border-radius: 8px; }
+      #status { color: var(--fg); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Ball detector benchmark</h1>
+      <p>
+        Times MediaPipe COCO object detectors in this browser on this machine. Frames are read locally and
+        never stored or uploaded. Synthetic frames measure speed only; they say nothing about accuracy on a
+        real court. Use your own images or a short clip for a detection check.
+      </p>
+
+      <fieldset>
+        <legend>Models</legend>
+        <label><input type="checkbox" name="model" value="efficientdet_lite0_int8" checked /> Lite0 int8</label>
+        <label><input type="checkbox" name="model" value="efficientdet_lite0_float16" checked /> Lite0 float16</label>
+        <label><input type="checkbox" name="model" value="efficientdet_lite2_int8" checked /> Lite2 int8</label>
+        <label><input type="checkbox" name="model" value="efficientdet_lite2_float16" checked /> Lite2 float16</label>
+        <label><input type="checkbox" name="model" value="pose_landmarker_lite" checked /> Pose model (reference)</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Run</legend>
+        <label>Delegate
+          <select id="delegate"><option>GPU</option><option>CPU</option></select>
+        </label>
+        <label>Timed frames <input id="frames" type="number" min="10" max="600" value="120" style="width: 5em" /></label>
+        <label>Ball score at least <input id="threshold" type="number" min="0.05" max="0.95" step="0.05" value="0.3" style="width: 5em" /></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Frames</legend>
+        <label><input type="radio" name="source" value="synthetic" checked /> Synthetic (speed only)</label>
+        <label><input type="radio" name="source" value="files" /> My images or one video</label>
+        <input id="files" type="file" accept="image/*,video/*" multiple />
+      </fieldset>
+
+      <button id="run" type="button">Run benchmark</button>
+      <span id="status"></span>
+
+      <div class="scroll"><table id="table" hidden></table></div>
+      <canvas id="preview" width="640" height="360" hidden></canvas>
+      <pre id="json" hidden></pre>
+    </main>
+    <script type="module" src="./detector.ts"></script>
+  </body>
+</html>
