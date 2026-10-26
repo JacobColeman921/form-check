@@ -1,6 +1,6 @@
 # Form Check: Claude Code cloud workpack
 
-Use this with **Claude Code cloud sessions** on a GitHub branch containing the current app changes. A cloud session clones GitHub; it cannot read this MacBook's uncommitted working tree. Start one prompt per session, on the branch with this file. Review each pull request before using a later prompt that depends on it. Do not paste all six into one long chat.
+Use this with **Claude Code cloud sessions** on branch `feature/basketball-coach-cloud-workpack` in `JacobColeman921/form-check`. A cloud session clones GitHub; it cannot read this MacBook's uncommitted working tree. Start one prompt per session, on the branch with this file. Review each pull request before using a later prompt that depends on it. Do not paste all six into one long chat. Start with Prompt 3 if you want to use credits for the hardest missing decision; Prompts 1 and 2 are optional audits of code already present.
 
 ## Project brief for every session
 
@@ -36,7 +36,7 @@ Acceptance: precise tests pass; the UI separates measured values from coaching s
 
 ## Prompt 3: choose a Mac-local ball-and-rim detector
 
-Read the Project brief above. This session is research plus a small benchmark, not production integration. Compare genuinely available ball/rim object detectors and model formats that could run on an M5 MacBook without ongoing paid inference. Verify model weights, licenses, provenance, image/input size, estimated memory, and whether the candidate can run on the static browser app or requires a local Mac companion process. Build a runnable, bounded benchmark only if weights are publicly obtainable and licensing allows it. If Roboflow's example requires user-trained weights or an API key, say so; do not imply its article provides a ready universal model. Record a recommendation in `docs/` with links and measured results, or clearly mark estimates when measurement is unavailable. Sources: Roboflow article and example repository above, plus official model documentation.
+Read the Project brief above. This session is research plus a small benchmark, not production integration. Compare genuinely available ball/rim object detectors and model formats that could run on an M5 MacBook without ongoing paid inference. Verify model weights, licenses, provenance, image/input size, estimated memory, and whether the candidate can run on the static browser app or requires a local Mac companion process. Build a runnable, bounded benchmark only if weights are publicly obtainable and licensing allows it. A cloud VM cannot measure M5 performance; label any cloud timing as cloud timing and leave a Mac benchmark command for the user. If Roboflow's example requires user-trained weights or an API key, say so; do not imply its article provides a ready universal model. Record a recommendation in `docs/` with links and measured results, or clearly mark estimates when measurement is unavailable. Sources: Roboflow article and example repository above, plus official model documentation.
 
 Acceptance: one recommended path with tradeoffs, one fallback, explicit license/weight status, and no cloud inference hidden in a supposedly local design.
 
