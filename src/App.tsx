@@ -198,7 +198,11 @@ export default function App() {
     if (next !== "train" && pose.status === "running") stopCamera();
     setScreen(next);
   };
-  const deleteSelected = async () => { if (!selected) return; await deleteSession(selected.id); setSelectedId(null); await refreshHistory(); };
+  const deleteSelected = async () => {
+    if (!selected) return;
+    try { await deleteSession(selected.id); setSelectedId(null); await refreshHistory(); }
+    catch (error) { setHistoryError(error instanceof Error ? error.message : String(error)); }
+  };
   return <div className="shell">
     <a className="skip" href="#main">Skip to content</a>
     <header className="topbar">
@@ -218,7 +222,7 @@ export default function App() {
           </aside>
           <section className="workbench" aria-label="Live camera and coaching">
             <div className="camera-head"><div><h2>{chosen.name}</h2><p>{chosen.setup}</p></div><span className={`camera-state camera-state--${pose.status}`}>{pose.status === "running" ? "Live" : pose.status === "starting" ? "Connecting" : "Off"}</span></div>
-            {movement === "basketball" && <div className="shooting-side"><strong>Shooting hand</strong><div><button className={shootingSide === "right" ? "active" : ""} disabled={phase === "recording" || phase === "calibrating"} onClick={() => { setShootingSide("right"); setBaseline(null); }}>Right</button><button className={shootingSide === "left" ? "active" : ""} disabled={phase === "recording" || phase === "calibrating"} onClick={() => { setShootingSide("left"); setBaseline(null); }}>Left</button></div></div>}
+            {movement === "basketball" && <div className="shooting-side"><strong>Shooting hand</strong><div><button className={shootingSide === "right" ? "active" : ""} aria-pressed={shootingSide === "right"} disabled={phase === "recording" || phase === "calibrating"} onClick={() => { setShootingSide("right"); setBaseline(null); }}>Right</button><button className={shootingSide === "left" ? "active" : ""} aria-pressed={shootingSide === "left"} disabled={phase === "recording" || phase === "calibrating"} onClick={() => { setShootingSide("left"); setBaseline(null); }}>Left</button></div></div>}
             <figure className="viewport" style={pose.resolution ? { aspectRatio: `${pose.resolution.w} / ${pose.resolution.h}` } : undefined}>
               <video ref={pose.videoRef} playsInline muted className="video" /><canvas ref={overlayRef} className="overlay" aria-hidden="true" />
               {pose.status !== "running" && <figcaption className="camera-empty"><span className="camera-graphic" aria-hidden="true" /><strong>{pose.status === "starting" ? "Connecting camera…" : "Camera is off"}</strong><span>{pose.status === "starting" ? "Allow camera access if your browser asks." : "Video stays on this device. Nothing is recorded by default."}</span></figcaption>}
@@ -231,18 +235,18 @@ export default function App() {
               {pose.status !== "running" ? <button className="primary" onClick={() => void startCamera()} disabled={pose.status === "starting"}>{pose.status === "starting" ? "Connecting…" : "Start camera"}</button> : <button onClick={stopCamera}>Turn camera off</button>}
               <button onClick={calibrate} disabled={!ready || phase === "calibrating" || phase === "recording"}>{baseline ? "Recalibrate" : "Calibrate view"}</button>
               {phase === "recording" ? <button className="primary" onClick={() => void finishSet()}>Finish set</button> : <button className={baseline ? "primary" : ""} onClick={startSet} disabled={!baseline || !ready}>{movement === "posture" ? "Start posture check" : movement === "basketball" ? "Start shot set" : "Start set"}</button>}
-              <button className={voiceEnabled ? "voice-toggle active" : "voice-toggle"} onClick={() => { setVoiceEnabled(!voiceEnabled); if (!voiceEnabled) speakCue("voice-on", "Spoken cues are on.", true); }} disabled={!canSpeak()} aria-pressed={voiceEnabled}>{voiceEnabled ? "Voice on" : "Voice off"}</button>
+              <button className={voiceEnabled ? "voice-toggle active" : "voice-toggle"} onClick={() => { setVoiceEnabled(!voiceEnabled); if (!voiceEnabled) speakCue("voice-on", "Spoken cues are on.", true); }} disabled={!canSpeak()} title={!canSpeak() ? "Speech is unavailable in this browser" : undefined} aria-pressed={voiceEnabled}>{voiceEnabled ? "Voice on" : "Voice off"}</button>
             </div>
             {pose.status === "running" && <div className="camera-options"><div><span>Camera</span><strong>{pose.cameras.find((camera) => camera.deviceId === pose.deviceId)?.label || "Current camera"}</strong></div>{pose.cameras.length > 1 && <label>Switch camera<select value={pose.deviceId ?? ""} disabled={phase === "recording" || phase === "calibrating"} onChange={(event) => { pose.stop(); setBaseline(null); setPhase("live"); void pose.start("lite", event.target.value); }}><option value="">Choose camera</option>{pose.cameras.map((camera, index) => <option key={camera.deviceId} value={camera.deviceId}>{camera.label || `Camera ${index + 1}`}</option>)}</select></label>}{pose.canFlip && <button disabled={phase === "recording" || phase === "calibrating"} onClick={() => { pose.flip(); setBaseline(null); setPhase("live"); }}>Flip camera</button>}{pose.zoom && <label>Zoom<input type="range" min={pose.zoom.min} max={pose.zoom.max} step="0.1" value={pose.zoom.value} onChange={(event) => pose.setZoom(Number(event.target.value))} /></label>}</div>}
             <p className="camera-tip">Camera following you on a Mac? Turn off <strong>Center Stage</strong> in the menu bar's Video menu. For full-body moves, step back or use a wider external or iPhone rear camera. Basketball mode can use an upper-body view.</p>
           </section>
           <aside className="telemetry" aria-label="Live measurements"><h2>What the camera sees</h2>
             {movement === "basketball" ? <>
-              <div className="big-metric"><strong>{phase === "recording" ? liveReps : shotCurrent ? `${Math.round(shotCurrent.elbowAngle)}°` : "Not measured"}</strong><span>{phase === "recording" ? "shot motions" : "shooting elbow"}</span></div>
+              <div className="big-metric"><strong>{phase === "recording" ? liveReps : shotCurrent ? `${Math.round(shotCurrent.elbowAngle)}°` : "N/A"}</strong><span>{phase === "recording" ? "shot motions" : "shooting elbow"}</span></div>
               <dl><div><dt>Wrist above shoulder</dt><dd>{shotCurrent ? `${Math.round(shotCurrent.wristLift * 100)}% of torso` : "Not measured"}</dd></div><div><dt>Knee angle</dt><dd>{shotCurrent?.kneeAngle === null || !shotCurrent ? "Not measured" : `${Math.round(shotCurrent.kneeAngle)}°`}</dd></div><div><dt>Arm visibility</dt><dd>{shotCurrent ? `${Math.round(shotCurrent.visibility * 100)}%` : "Not measured"}</dd></div><div><dt>Model rate</dt><dd>{pose.fps ? `${pose.fps} fps` : "Not measured"}</dd></div></dl>
               <p>The ball and rim are not tracked. A counted arm motion is not a confirmed shot or make.</p>
             </> : <>
-              <div className="big-metric"><strong>{phase === "recording" ? movement === "posture" ? fmtTime(elapsed) : liveReps : current ? `${Math.round(current.kneeAngle)}°` : "Not measured"}</strong><span>{phase === "recording" ? movement === "posture" ? "time" : "complete reps" : "knee angle"}</span></div>
+              <div className="big-metric"><strong>{phase === "recording" ? movement === "posture" ? fmtTime(elapsed) : liveReps : current ? `${Math.round(current.kneeAngle)}°` : "N/A"}</strong><span>{phase === "recording" ? movement === "posture" ? "time" : "complete reps" : "knee angle"}</span></div>
               <dl><div><dt>Hip angle</dt><dd>{current ? `${Math.round(current.hipAngle)}°` : "Not measured"}</dd></div><div><dt>Trunk lean</dt><dd>{current ? `${Math.round(current.trunkLean)}°` : "Not measured"}</dd></div><div><dt>Joint visibility</dt><dd>{current ? `${Math.round(current.visibility * 100)}%` : "Not measured"}</dd></div><div><dt>Model rate</dt><dd>{pose.fps ? `${pose.fps} fps` : "Not measured"}</dd></div></dl>
               <p>These are estimates from one camera. Hidden joints and camera angle can change the reading.</p>
             </>}

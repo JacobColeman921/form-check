@@ -1,18 +1,22 @@
 @import "@fontsource-variable/public-sans/index.css";
+@import "@fontsource-variable/geist/index.css";
+@import "@fontsource-variable/geist-mono/index.css";
 :root {
   color-scheme: dark;
-  --ground: #171719;
-  --surface: #131217;
-  --raised: #212023;
-  --border: #2b2a30;
-  --text: #f5f5f6;
-  --muted: #a4a5ab;
-  --dim: #85868d;
+  --ground: #111418;
+  --surface: #191d22;
+  --raised: #242b31;
+  --border: #333b42;
+  --text: #f3f7f8;
+  --muted: #b2bcc3;
+  --dim: #909da5;
   --accent: #65d7e2;
   --positive: #71c9a9;
   --warning: #e9ba62;
   --negative: #ef8c9d;
   --font: "Public Sans Variable", "SF Pro Text", system-ui, sans-serif;
+  --font-display: "Geist Variable", "Public Sans Variable", system-ui, sans-serif;
+  --font-data: "Geist Mono Variable", ui-monospace, monospace;
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }

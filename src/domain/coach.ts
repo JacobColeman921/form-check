@@ -23,7 +23,7 @@ export const MOVEMENTS: Movement[] = [
   { id: "deadlift", name: "Kettlebell deadlift", category: "Kettlebell", description: "Track the hinge and return to standing without pretending to see spinal shape.", setup: "Stand side-on with the kettlebell near your feet and keep it visible if possible.", focus: "Hip hinge and knee movement from body landmarks." },
   { id: "swing", name: "Two-hand swing", category: "Kettlebell", description: "Count arm-rise cycles and check the timing of hip extension.", setup: "Stand side-on. Give yourself room around the bell and keep wrists in frame.", focus: "Hip and wrist timing; the bell itself is not tracked." },
   { id: "goblet", name: "Goblet squat", category: "Kettlebell", description: "Track loaded-squat depth and whether hands stay near the chest.", setup: "Stand side-on and hold the kettlebell close to your chest.", focus: "Squat movement and visible hand position." },
-  { id: "basketball", name: "Basketball shot", category: "Basketball", description: "Review shooting-arm motion and timing, with an optional knee reading when legs fit in frame.", setup: "Keep your shooting shoulder, elbow and wrist visible. The hoop does not need to fit in this first pass.", focus: "Counts shot motions, not makes or misses; the ball and rim are not tracked yet." },
+  { id: "basketball", name: "Basketball shot", category: "Basketball", description: "Review shooting-arm motion and timing, with an optional knee reading when legs fit in frame.", setup: "Keep your shooting shoulder, elbow and wrist visible. The hoop can stay outside the frame.", focus: "Counts shot motions, not makes or misses; the ball and rim are not tracked yet." },
 ];
 
 export interface CoachFrame {
