@@ -14,6 +14,8 @@
     "typecheck": "tsc -b --noEmit",
     "check:copy": "node scripts/check-copy.mjs",
     "fetch:model": "node scripts/fetch-model.mjs",
+    "fetch:detectors": "node scripts/fetch-detector-models.mjs",
+    "bench:detector:cloud": "node scripts/bench-detector-cloud.mjs",
     "copy:mediapipe": "node scripts/copy-mediapipe.mjs",
     "predev": "node scripts/copy-mediapipe.mjs",
     "prebuild": "node scripts/copy-mediapipe.mjs"

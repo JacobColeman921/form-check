@@ -29,3 +29,4 @@ node_modules
 coverage
 public/mediapipe
 public/models
+bench/models

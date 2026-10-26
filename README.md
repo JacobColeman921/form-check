@@ -34,7 +34,7 @@ MediaPipe Pose Landmarker runs from bundled model and WebAssembly files in a Web
 
 Live cues favor camera setup and clear rep observations. The review gives a coaching rule and compares rep count or hold time with the previous session of the same movement. It labels low-quality tracking instead of giving a numeric form score. These thresholds are coaching heuristics, not calibrated medical or sports-science measurements.
 
-A single side camera cannot reliably determine spinal rounding, knee valgus, exact kettlebell path, load, internal forces, or injury risk. Changing camera position can alter apparent joint angles. Use the same setup for comparisons. The basketball mode counts visible shooting motions, not actual ball releases. It cannot measure shot arc or makes and misses until a ball-and-rim detector is added. It gives no numeric shot score.
+A single side camera cannot reliably determine spinal rounding, knee valgus, exact kettlebell path, load, internal forces, or injury risk. Changing camera position can alter apparent joint angles. Use the same setup for comparisons. The basketball mode counts visible shooting motions, not actual ball releases. It cannot measure shot arc or makes and misses until a ball-and-rim detector is added; `docs/BALL_RIM_DETECTOR.md` records the proposed detector. It gives no numeric shot score.
 
 ## Commands
 
@@ -44,6 +44,8 @@ A single side camera cannot reliably determine spinal rounding, knee valgus, exa
 | `npm run build` | Typecheck and production build |
 | `npm test` | Domain unit tests |
 | `npm run fetch:model` | Download local pose model into `public/models` |
+| `npm run fetch:detectors` | Download candidate ball detectors into `bench/models` for the benchmark page |
+| `npm run bench:detector:cloud` | Headless detector benchmark for a machine without a screen; see `docs/BALL_RIM_DETECTOR.md` |
 
 ## Code map
 
